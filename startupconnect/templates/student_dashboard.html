@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - StartupConnect TN{% endblock %}
+
+{% block content %}
+<!-- v1.1 - Pitch textarea fix -->
+<style>
+.dashboard-container { display: flex; min-height: 100vh; padding-top: 0; }
+.sidebar { 
+    width: 250px; 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white; 
+    padding: 20px 0; 
+    position: fixed; 
+    height: 100vh;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+.sidebar a { 
+    color: #e5e7eb; 
+    text-decoration: none; 
+    padding: 15px 25px; 
+    display: block; 
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+.sidebar a:hover { 
+    background: rgba(34,211,238,0.15);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    padding-left: 30px;
+}
+.sidebar a.active { 
+    background: rgba(34,211,238,0.2);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    font-weight: 600;
+}
+.main-content { 
+    margin-left: 250px; 
+    flex: 1; 
+    padding: 30px; 
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    min-height: 100vh;
+}
+.card { 
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+}
+.stat-card { 
+    text-align: center; 
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(14,165,233,0.1));
+    border: 1px solid rgba(34,211,238,0.3);
+}
+.stat-card h3 { font-size: 2.5rem; color: #22d3ee; font-weight: 700; }
+.stat-card p { color: #e5e7eb; margin: 0; font-weight: 500; }
+.btn-primary { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; font-weight: 600; }
+.btn-primary:hover { background: linear-gradient(135deg, #0ea5e9, #22d3ee); transform: translateY(-2px); }
+.badge { padding: 6px 12px; }
+h2, h4, h5 { color: #e5e7eb; }
+.table { color: #e5e7eb; }
+.table thead { background: rgba(34,211,238,0.1); }
+.form-control, .form-select { 
+    background: #020617; 
+    border: 1px solid #1e293b; 
+    color: #e5e7eb; 
+}
+.modal .form-control { 
+    background: #0f172a !important; 
+    border: 1px solid #334155 !important; 
+    color: #e5e7eb !important; 
+    pointer-events: auto !important;
+    user-select: text !important;
+}
+.modal textarea.form-control {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    color: #e5e7eb !important;
+    cursor: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+.form-label { color: #e5e7eb; font-weight: 500; }
+
+/* Chatbot Styles */
+.chatbot-button { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; box-shadow: 0 4px 15px rgba(34,211,238,0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.3s; }
+.chatbot-button:hover { transform: scale(1.1); }
+.chatbot-window { position: fixed; bottom: 90px; left: 20px; width: 350px; height: 500px; background: #1e293b; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; z-index: 1000; border: 1px solid #334155; }
+.chatbot-window.active { display: flex; }
+.chatbot-header { background: linear-gradient(135deg, #22d3ee, #0ea5e9); padding: 15px; border-radius: 15px 15px 0 0; color: #020617; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.chatbot-close { background: none; border: none; color: #020617; font-size: 24px; cursor: pointer; }
+.chatbot-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.chatbot-message { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+.chatbot-message.user { background: #22d3ee; color: #020617; align-self: flex-end; }
+.chatbot-message.bot { background: #334155; color: #e5e7eb; align-self: flex-start; }
+.chatbot-input-area { padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; }
+.chatbot-input { flex: 1; background: #0f172a; border: 1px solid #334155; color: #e5e7eb; padding: 10px; border-radius: 8px; }
+.chatbot-send { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.modal { z-index: 1060 !important; }
+.modal-backdrop { z-index: 1050 !important; }
+.modal-dialog { pointer-events: auto !important; }
+.modal-content { pointer-events: auto !important; }
+.user-list { max-height: 300px; overflow-y: auto; }
+.user-item { padding: 10px; border-bottom: 1px solid #334155; cursor: pointer; transition: background 0.2s; }
+.user-item:hover { background: rgba(34,211,238,0.1); }
+/* Flash Messages Positioning */
+.alert { margin-left: 250px; margin-right: 20px; margin-top: 20px; z-index: 1040; position: relative; }
+</style>
+
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h4 class="text-center mb-4" style="color: #22d3ee;">🎓 Student Panel</h4>
+        <a href="{{ url_for('student_dashboard', section='overview') }}" class="{% if section == 'overview' %}active{% endif %}">📊 Overview</a>
+        <a href="{{ url_for('student_dashboard', section='submit_idea') }}" class="{% if section == 'submit_idea' %}active{% endif %}">💡 Submit Idea</a>
+        <a href="{{ url_for('student_dashboard', section='my_ideas') }}" class="{% if section == 'my_ideas' %}active{% endif %}">📁 My Ideas</a>
+        <a href="{{ url_for('student_dashboard', section='mentors') }}" class="{% if section == 'mentors' %}active{% endif %}">👨🏫 Find Mentors</a>
+        <a href="{{ url_for('student_dashboard', section='investors') }}" class="{% if section == 'investors' %}active{% endif %}">💼 Find Investors</a>
+        <a href="{{ url_for('student_dashboard', section='schemes') }}" class="{% if section == 'schemes' %}active{% endif %}">🏛️ Govt Schemes</a>
+        <a href="{{ url_for('student_dashboard', section='progress') }}" class="{% if section == 'progress' %}active{% endif %}">📈 Progress Tracker</a>
+        <a href="{{ url_for('student_dashboard', section='messages') }}" class="{% if section == 'messages' %}active{% endif %}">💬 Messages</a>
+        <hr style="border-color: rgba(255,255,255,0.2);">
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 class="mb-4">Welcome, {{ name }}! 🎓</h2>
+
+        {% if section == 'overview' %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.total_ideas if data.total_ideas is defined else 0 }}</h3>
+                    <p>Total Ideas</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.mentors_connected if data.mentors_connected is defined else 0 }}</h3>
+                    <p>Mentors Connected</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.investors_interest if data.investors_interest is defined else 0 }}</h3>
+                    <p>Investor Interests</p>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5>Quick Actions</h5>
+                <a href="{{ url_for('student_dashboard', section='submit_idea') }}" class="btn btn-primary me-2">Submit New Idea</a>
+                <a href="{{ url_for('student_dashboard', section='mentors') }}" class="btn btn-info me-2">Find Mentors</a>
+                <a href="{{ url_for('student_dashboard', section='investors') }}" class="btn btn-success">Connect with Investors</a>
+            </div>
+        </div>
+
+        {% elif section == 'submit_idea' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Submit Your Startup Idea 💡</h4>
+                <form method="POST" action="{{ url_for('submit_idea') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Startup Name</label>
+                        <input type="text" class="form-control" name="startup_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Idea Description</label>
+                        <textarea class="form-control" name="idea_description" rows="4" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Domain</label>
+                            <select class="form-control" name="domain" required>
+                                <option value="">Select Domain</option>
+                                <option value="AgriTech">AgriTech</option>
+                                <option value="FinTech">FinTech</option>
+                                <option value="EdTech">EdTech</option>
+                                <option value="HealthTech">HealthTech</option>
+                                <option value="E-Commerce">E-Commerce</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Stage</label>
+                            <select class="form-control" name="stage" required>
+                                <option value="">Select Stage</option>
+                                <option value="Idea">Idea</option>
+                                <option value="Prototype">Prototype</option>
+                                <option value="MVP">MVP</option>
+                                <option value="Growth">Growth</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Team Size</label>
+                            <input type="number" class="form-control" name="team_size" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prototype Status</label>
+                            <select class="form-control" name="prototype_status" required>
+                                <option value="not_started">Not Started</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Revenue Model</label>
+                        <input type="text" class="form-control" name="revenue_model" placeholder="e.g., Subscription, Freemium, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Market Validation</label>
+                        <select class="form-control" name="market_validation" required>
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Idea</button>
+                </form>
+            </div>
+        </div>
+
+        {% elif section == 'my_ideas' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>My Startup Ideas 📁</h4>
+                {% if data.startups %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Startup Name</th>
+                                <th>Domain</th>
+                                <th>Stage</th>
+                                <th>Readiness Score</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for startup in data.startups %}
+                            <tr>
+                                <td>{{ startup[2] }}</td>
+                                <td><span class="badge bg-info">{{ startup[4] }}</span></td>
+                                <td>{{ startup[5] }}</td>
+                                <td><span class="badge bg-success">{{ startup[11] }}/100</span></td>
+                                <td>{{ startup[12] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No ideas submitted yet. <a href="{{ url_for('student_dashboard', section='submit_idea') }}" style="color: #22d3ee;">Submit your first idea!</a></p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'mentors' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Find Mentors 👨🏫</h4>
+                {% if data.mentors %}
+                <div class="mb-4">
+                    <input type="text" id="mentorSearch" class="form-control" placeholder="🔍 Search by name or email..." onkeyup="filterMentors()">
+                </div>
+                <div class="row" id="mentorsList">
+                    {% for mentor in data.mentors %}
+                    <div class="col-md-4 mb-3 mentor-item">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="mentor-name">{{ mentor[1] }}</h5>
+                                <p style="color: #94a3b8;" class="mentor-email">{{ mentor[2] }}</p>
+                                {% if data.mentor_scores and data.mentor_scores.get(mentor[0], 0) > 70 %}
+                                <span class="badge bg-success mb-2">Recommended Match</span>
+                                {% endif %}
+                                <a href="{{ url_for('connect_mentor', mentor_id=mentor[0]) }}" class="btn btn-sm btn-primary">Connect</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No mentors available at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'investors' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Find Investors 💼</h4>
+                {% if data.investors %}
+                <div class="mb-4">
+                    <input type="text" id="investorSearch" class="form-control" placeholder="🔍 Search by name or email..." onkeyup="filterInvestors()">
+                </div>
+                <div class="row" id="investorsList">
+                    {% for investor in data.investors %}
+                    <div class="col-md-6 mb-4 investor-item">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="investor-name">{{ investor[1] }}</h5>
+                                <p style="color: #94a3b8;" class="investor-email">{{ investor[2] }}</p>
+                                <form method="POST" action="{{ url_for('student_send_message') }}" class="mt-3">
+                                    <input type="hidden" name="receiver_id" value="{{ investor[0] }}">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control" name="message" placeholder="Type your pitch message here..." required>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-success">Send Pitch</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No investors available at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <script>
+        function filterMentors() {
+            const searchInput = document.getElementById('mentorSearch').value.toLowerCase();
+            const mentorItems = document.querySelectorAll('.mentor-item');
+            
+            mentorItems.forEach(item => {
+                const name = item.querySelector('.mentor-name').textContent.toLowerCase();
+                const email = item.querySelector('.mentor-email').textContent.toLowerCase();
+                
+                if (name.includes(searchInput) || email.includes(searchInput)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function filterInvestors() {
+            const searchInput = document.getElementById('investorSearch').value.toLowerCase();
+            const investorItems = document.querySelectorAll('.investor-item');
+            
+            investorItems.forEach(item => {
+                const name = item.querySelector('.investor-name').textContent.toLowerCase();
+                const email = item.querySelector('.investor-email').textContent.toLowerCase();
+                
+                if (name.includes(searchInput) || email.includes(searchInput)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        </script>
+
+        {% elif section == 'schemes' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Government Schemes 🏛️</h4>
+                <div class="mb-3">
+                    <input type="text" id="schemeSearch" class="form-control" placeholder="Search schemes by name, domain, or type..." onkeyup="filterSchemes()">
+                </div>
+                {% if data.schemes %}
+                <div id="schemesList">
+                {% for scheme in data.schemes %}
+                <div class="card mb-3 scheme-item">
+                    <div class="card-body">
+                        <h5 style="color: #22d3ee;">{{ scheme[1] }}</h5>
+                        <p style="color: #e5e7eb;"><strong>Domain:</strong> <span class="badge bg-info">{{ scheme[2] }}</span> | <strong>Stage:</strong> <span class="badge bg-warning">{{ scheme[3] }}</span> | <strong>Type:</strong> <span class="badge bg-success">{{ scheme[4] }}</span></p>
+                        <p style="color: #e5e7eb;">{{ scheme[5] }}</p>
+                        <p style="color: #94a3b8;"><small><strong>Eligibility:</strong> {{ scheme[6] }}</small></p>
+                        
+                        <button class="btn btn-primary btn-sm" onclick="toggleForm('applyForm{{ scheme[0] }}')">Apply Now</button>
+                        
+                        <!-- Application Form (Hidden by default) -->
+                        <div id="applyForm{{ scheme[0] }}" style="display:none; margin-top:15px; padding:15px; background:#0f172a; border:1px solid #334155; border-radius:8px;">
+                            <h6 style="color:#22d3ee; margin-bottom:15px;">Application Form for {{ scheme[1] }}</h6>
+                            <form onsubmit="submitSchemeApplication(event, {{ scheme[0] }})">
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Full Name</label>
+                                    <input type="text" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Email</label>
+                                    <input type="email" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Phone Number</label>
+                                    <input type="tel" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Startup Name</label>
+                                    <input type="text" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Business Description</label>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Brief description of your business..." required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-size:14px;">Why do you need this scheme?</label>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Explain your reason..." required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm me-2">Submit Application</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleForm('applyForm{{ scheme[0] }}')">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No schemes available. Check back later!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'progress' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Progress Tracker 📈</h4>
+                {% if data.startups %}
+                {% for startup in data.startups %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>{{ startup[2] }}</h5>
+                        <div class="progress" style="height: 25px; background: #1e293b;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ startup[11] }}%; background: linear-gradient(135deg, #22d3ee, #0ea5e9);">{{ startup[11] }}%</div>
+                        </div>
+                        <p class="mt-2" style="color: #e5e7eb;"><strong>Stage:</strong> {{ startup[5] }} | <strong>Domain:</strong> {{ startup[4] }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #94a3b8;">No startups to track yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'messages' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Messages 💬</h4>
+                <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#newMessageModal">✉️ New Message</button>
+                
+                {% if data.messages %}
+                {% for msg in data.messages %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <strong style="color: #22d3ee;">{{ msg[4] }}</strong>
+                        <p style="color: #e5e7eb;">{{ msg[3] }}</p>
+                        <small style="color: #94a3b8;">{{ msg[5] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #94a3b8;">No messages yet. Start a conversation!</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- New Message Modal -->
+        <div class="modal fade" id="newMessageModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background: #1e293b; color: #e5e7eb; border: 1px solid #334155;">
+                    <div class="modal-header" style="border-bottom: 1px solid #334155;">
+                        <h5 class="modal-title">Send New Message</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('student_send_message') }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Search Recipient</label>
+                                <input type="text" id="recipientSearch" class="form-control" placeholder="🔍 Search mentors or investors..." onkeyup="filterRecipients()" style="background: #0f172a !important; border: 1px solid #334155 !important; color: #e5e7eb !important;">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Select Recipient</label>
+                                <div class="user-list" id="recipientList" style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px;">
+                                    {% if data.mentors %}
+                                    <div style="color: #22d3ee; font-weight: 600; padding: 5px 10px;">Mentors</div>
+                                    {% for mentor in data.mentors %}
+                                    <div class="user-item" data-name="{{ mentor[1] }}" data-type="mentor" onclick="selectRecipient({{ mentor[0] }}, '{{ mentor[1] }}', 'Mentor')">
+                                        <strong>{{ mentor[1] }}</strong> <span class="badge bg-info">Mentor</span><br>
+                                        <small style="color: #94a3b8;">{{ mentor[2] }}</small>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                    {% if data.investors %}
+                                    <div style="color: #22d3ee; font-weight: 600; padding: 5px 10px; margin-top: 10px;">Investors</div>
+                                    {% for investor in data.investors %}
+                                    <div class="user-item" data-name="{{ investor[1] }}" data-type="investor" onclick="selectRecipient({{ investor[0] }}, '{{ investor[1] }}', 'Investor')">
+                                        <strong>{{ investor[1] }}</strong> <span class="badge bg-success">Investor</span><br>
+                                        <small style="color: #94a3b8;">{{ investor[2] }}</small>
+                                    </div>
+                                    {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Selected: <span id="selectedRecipient" style="color: #22d3ee;">None</span></label>
+                                <input type="hidden" name="receiver_id" id="receiverId" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Message</label>
+                                <textarea class="form-control" name="message" rows="4" placeholder="Type your message..." required style="background: #0f172a !important; border: 1px solid #334155 !important; color: #e5e7eb !important;"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid #334155;">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chatbot -->
+<button class="chatbot-button" onclick="toggleChatbot()">🤖</button>
+<div class="chatbot-window" id="chatbotWindow">
+    <div class="chatbot-header">
+        <span>AI Assistant</span>
+        <button class="chatbot-close" onclick="toggleChatbot()">×</button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages">
+        <div class="chatbot-message bot">Hi! I'm your startup assistant. Ask me anything about startups, mentors, investors, or schemes!</div>
+    </div>
+    <div class="chatbot-input-area">
+        <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="chatbot-send" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleChatbot() {
+    document.getElementById('chatbotWindow').classList.toggle('active');
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatbotInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const messagesDiv = document.getElementById('chatbotMessages');
+    messagesDiv.innerHTML += `<div class="chatbot-message user">${message}</div>`;
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    fetch('/chatbot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: message})
+    })
+    .then(res => res.json())
+    .then(data => {
+        messagesDiv.innerHTML += `<div class="chatbot-message bot">${data.response}</div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+}
+
+function filterSchemes() {
+    const searchValue = document.getElementById('schemeSearch').value.toLowerCase();
+    const schemes = document.querySelectorAll('.scheme-item');
+    
+    schemes.forEach(scheme => {
+        const text = scheme.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            scheme.style.display = 'block';
+        } else {
+            scheme.style.display = 'none';
+        }
+    });
+}
+
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function submitSchemeApplication(event, schemeId) {
+    event.preventDefault();
+    alert('Application submitted successfully! You will be contacted soon.');
+    document.getElementById('applyForm' + schemeId).style.display = 'none';
+    event.target.reset();
+}
+
+function selectRecipient(id, name, type) {
+    document.getElementById('receiverId').value = id;
+    document.getElementById('selectedRecipient').textContent = name + ' (' + type + ')';
+    document.querySelectorAll('.user-item').forEach(item => {
+        item.style.background = '';
+    });
+    event.target.closest('.user-item').style.background = 'rgba(34,211,238,0.2)';
+}
+
+function filterRecipients() {
+    const searchValue = document.getElementById('recipientSearch').value.toLowerCase();
+    const users = document.querySelectorAll('.user-item');
+    
+    users.forEach(user => {
+        const text = user.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            user.style.display = 'block';
+        } else {
+            user.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

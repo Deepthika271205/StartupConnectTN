@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+
+{% block title %}Mentor Dashboard - StartupConnect TN{% endblock %}
+
+{% block content %}
+<style>
+.dashboard-container { display: flex; min-height: 100vh; padding-top: 0; }
+.sidebar { 
+    width: 250px; 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white; 
+    padding: 20px 0; 
+    position: fixed; 
+    height: 100vh;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    top: 0;
+    overflow-y: auto;
+}
+.sidebar a { 
+    color: #e5e7eb; 
+    text-decoration: none; 
+    padding: 15px 25px; 
+    display: block; 
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+.sidebar a:hover { 
+    background: rgba(34,211,238,0.15);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    padding-left: 30px;
+}
+.sidebar a.active { 
+    background: rgba(34,211,238,0.2);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    font-weight: 600;
+}
+.main-content { 
+    margin-left: 250px; 
+    flex: 1; 
+    padding: 30px; 
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    min-height: 100vh;
+}
+.card { 
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    margin-bottom: 20px;
+}
+.stat-card { 
+    text-align: center; 
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(14,165,233,0.1));
+    border: 1px solid rgba(34,211,238,0.3);
+}
+.stat-card h3 { font-size: 2.5rem; color: #22d3ee; font-weight: 700; }
+.stat-card p { color: #e5e7eb; font-weight: 500; }
+.btn-primary { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; font-weight: 600; }
+h2, h4, h5 { color: #e5e7eb; }
+.table { color: #e5e7eb; }
+.form-control { background: #020617 !important; border: 1px solid #1e293b !important; color: #e5e7eb !important; }
+.user-list { max-height: 300px; overflow-y: auto; }
+.user-item { padding: 10px; border-bottom: 1px solid #334155; cursor: pointer; transition: background 0.2s; }
+.user-item:hover { background: rgba(34,211,238,0.1); }
+
+/* Chatbot Styles */
+.chatbot-button { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; box-shadow: 0 4px 15px rgba(34,211,238,0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.3s; }
+.chatbot-button:hover { transform: scale(1.1); }
+.chatbot-window { position: fixed; bottom: 90px; left: 20px; width: 350px; height: 500px; background: #1e293b; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; z-index: 1000; border: 1px solid #334155; }
+.chatbot-window.active { display: flex; }
+.chatbot-header { background: linear-gradient(135deg, #22d3ee, #0ea5e9); padding: 15px; border-radius: 15px 15px 0 0; color: #020617; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.chatbot-close { background: none; border: none; color: #020617; font-size: 24px; cursor: pointer; }
+.chatbot-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.chatbot-message { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+.chatbot-message.user { background: #22d3ee; color: #020617; align-self: flex-end; }
+.chatbot-message.bot { background: #334155; color: #e5e7eb; align-self: flex-start; }
+.chatbot-input-area { padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; }
+.chatbot-input { flex: 1; background: #0f172a; border: 1px solid #334155; color: #e5e7eb; padding: 10px; border-radius: 8px; }
+.chatbot-send { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+</style>
+
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h4 class="text-center mb-4" style="color: #22d3ee;">🎯 Mentor Panel</h4>
+        <a href="{{ url_for('mentor_dashboard', section='overview') }}" class="{% if section == 'overview' %}active{% endif %}">📊 Overview</a>
+        <a href="{{ url_for('mentor_dashboard', section='students') }}" class="{% if section == 'students' %}active{% endif %}">👨🎓 All Students</a>
+        <a href="{{ url_for('mentor_dashboard', section='mentees') }}" class="{% if section == 'mentees' %}active{% endif %}">✅ My Mentees</a>
+        <a href="{{ url_for('mentor_dashboard', section='assign') }}" class="{% if section == 'assign' %}active{% endif %}">📝 Assign Startups</a>
+        <a href="{{ url_for('mentor_dashboard', section='feedback') }}" class="{% if section == 'feedback' %}active{% endif %}">💬 Feedback</a>
+        <a href="{{ url_for('mentor_dashboard', section='progressview') }}" class="{% if section == 'progressview' %}active{% endif %}">📈 Progress View</a>
+        <a href="{{ url_for('mentor_dashboard', section='requests') }}" class="{% if section == 'requests' %}active{% endif %}">📩 Requests</a>
+        <a href="{{ url_for('mentor_dashboard', section='schemes') }}" class="{% if section == 'schemes' %}active{% endif %}">🏛️ Govt Schemes</a>
+        <a href="{{ url_for('mentor_dashboard', section='messages') }}" class="{% if section == 'messages' %}active{% endif %}">💬 Messages</a>
+        <hr style="border-color: rgba(255,255,255,0.2);">
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 class="mb-4">Welcome, {{ name }}! 🎯</h2>
+
+        {% if section == 'overview' %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.total_mentees if data.total_mentees is defined else 0 }}</h3>
+                    <p>Total Mentees</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.pending_requests if data.pending_requests is defined else 0 }}</h3>
+                    <p>Pending Requests</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.sessions_completed if data.sessions_completed is defined else 0 }}</h3>
+                    <p>Sessions Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5>Quick Actions</h5>
+                <a href="{{ url_for('mentor_dashboard', section='students') }}" class="btn btn-primary me-2">View Students</a>
+                <a href="{{ url_for('mentor_dashboard', section='requests') }}" class="btn btn-warning me-2">View Requests</a>
+                <a href="{{ url_for('mentor_dashboard', section='mentees') }}" class="btn btn-success">My Mentees</a>
+            </div>
+        </div>
+
+        {% elif section == 'students' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>All Students & Startups 👨🎓</h4>
+                <div class="mb-3">
+                    <input type="text" id="studentSearch" class="form-control" placeholder="Search students by name, domain, stage, or score..." onkeyup="filterStudents()">
+                </div>
+                {% if data.startups %}
+                <div class="row" id="studentsList">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3 student-item">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[2] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Student:</strong> {{ startup[13] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Domain:</strong> <span class="badge bg-info">{{ startup[4] }}</span></p>
+                                <p style="color: #e5e7eb;"><strong>Stage:</strong> {{ startup[5] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Readiness Score:</strong> <span class="badge bg-success">{{ startup[11] }}/100</span></p>
+                                <p style="color: #94a3b8;">{{ startup[3][:100] }}...</p>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#mentorModal{{ startup[1] }}">Offer Mentorship</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Mentor Modal -->
+                        <div class="modal fade" id="mentorModal{{ startup[1] }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content" style="background: #0f172a; color: #e5e7eb;">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Message {{ startup[13] }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('student_send_message') }}">
+                                        <div class="modal-body">
+                                            <input type="hidden" name="receiver_id" value="{{ startup[1] }}">
+                                            <textarea class="form-control" name="message" rows="4" placeholder="Offer your mentorship..." required></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-primary">Send Message</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No students available at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'mentees' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>My Mentees ✅</h4>
+                {% if data.mentees %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mentee in data.mentees %}
+                            <tr>
+                                <td>{{ mentee[1] }}</td>
+                                <td>{{ mentee[2] }}</td>
+                                <td><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ mentee[0] }}">Message</button></td>
+                            </tr>
+                            
+                            <!-- Message Modal -->
+                            <div class="modal fade" id="messageModal{{ mentee[0] }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content" style="background: #0f172a; color: #e5e7eb;">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Message {{ mentee[1] }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('student_send_message') }}">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="receiver_id" value="{{ mentee[0] }}">
+                                                <textarea class="form-control" name="message" rows="4" placeholder="Your message..." required></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary">Send</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No mentees yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'assign' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Assign Startups 📝</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Assign startups to specific mentors or track assignments.</p>
+                {% if data.startups %}
+                <div class="row">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[2] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Student:</strong> {{ startup[13] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Domain:</strong> <span class="badge bg-info">{{ startup[4] }}</span> | <strong>Stage:</strong> {{ startup[5] }}</p>
+                                <p style="color: #94a3b8;">{{ startup[3][:80] }}...</p>
+                                <button class="btn btn-sm btn-success" onclick="assignStartup('{{ startup[2] }}', '{{ startup[13] }}')">Assign to Me</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No startups available for assignment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'feedback' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Feedback 💬</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Provide feedback to your mentees on their startup progress.</p>
+                {% if data.mentees %}
+                <div class="row">
+                    {% for mentee in data.mentees %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ mentee[1] }}</h5>
+                                <p style="color: #94a3b8;">{{ mentee[2] }}</p>
+                                <form onsubmit="submitFeedback(event, '{{ mentee[1] }}')">
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control form-control-sm" placeholder="Enter your feedback..." required>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">Send Feedback</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No mentees to provide feedback to. Accept mentorship requests first.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'progressview' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Progress View 📈</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Track the progress of your mentees' startups.</p>
+                {% if data.startups %}
+                <div class="row">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[2] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Student:</strong> {{ startup[13] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Stage:</strong> {{ startup[5] }} | <strong>Domain:</strong> {{ startup[4] }}</p>
+                                <div class="progress" style="height: 20px; background: #1e293b; margin: 10px 0;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ startup[11] }}%; background: linear-gradient(135deg, #22d3ee, #0ea5e9);">{{ startup[11] }}%</div>
+                                </div>
+                                <p style="color: #e5e7eb;"><strong>Readiness Score:</strong> <span class="badge bg-success">{{ startup[11] }}/100</span></p>
+                                <small style="color: #94a3b8;">Created: {{ startup[12] }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No startup progress to track yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'requests' %}
+        <div class="card">
+            <div class="card-body">
+                <h4 style="color: #e5e7eb;">Mentorship Requests 📩</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Students who want you as their mentor</p>
+                {% if data.requests %}
+                <div class="row">
+                    {% for req in data.requests %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">👨‍🎓 {{ req[5] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Email:</strong> {{ req[6] }}</p>
+                                <p style="color: #94a3b8;"><small>Requested on: {{ req[3] }}</small></p>
+                                <a href="{{ url_for('accept_mentor_request', request_id=req[0]) }}" class="btn btn-sm btn-success me-2">Accept Request</a>
+                                <button class="btn btn-sm btn-danger">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No pending mentorship requests at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'schemes' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Government Schemes 🏛️</h4>
+                <div class="mb-3">
+                    <input type="text" id="schemeSearch" class="form-control" placeholder="Search schemes by name, domain, or type..." onkeyup="filterSchemes()">
+                </div>
+                {% if data.schemes %}
+                <div id="schemesList">
+                {% for scheme in data.schemes %}
+                <div class="card mb-3 scheme-item">
+                    <div class="card-body">
+                        <h5 style="color: #22d3ee;">{{ scheme[1] }}</h5>
+                        <p style="color: #e5e7eb;"><strong>Domain:</strong> <span class="badge bg-info">{{ scheme[2] }}</span> | <strong>Stage:</strong> <span class="badge bg-warning">{{ scheme[3] }}</span> | <strong>Type:</strong> <span class="badge bg-success">{{ scheme[4] }}</span></p>
+                        <p style="color: #e5e7eb;">{{ scheme[5] }}</p>
+                        <p style="color: #94a3b8;"><small><strong>Eligibility:</strong> {{ scheme[6] }}</small></p>
+                        
+                        <button class="btn btn-primary btn-sm" onclick="toggleForm('applyForm{{ scheme[0] }}')">Apply Now</button>
+                        
+                        <!-- Application Form (Hidden by default) -->
+                        <div id="applyForm{{ scheme[0] }}" style="display:none; margin-top:15px; padding:15px; background:#0f172a; border:1px solid #334155; border-radius:8px;">
+                            <h6 style="color:#22d3ee; margin-bottom:15px;">Application Form for {{ scheme[1] }}</h6>
+                            <form onsubmit="submitSchemeApplication(event, {{ scheme[0] }})">
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Full Name</label>
+                                    <input type="text" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Email</label>
+                                    <input type="email" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Phone Number</label>
+                                    <input type="tel" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Startup Name</label>
+                                    <input type="text" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" style="font-size:14px;">Business Description</label>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Brief description of your business..." required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-size:14px;">Why do you need this scheme?</label>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Explain your reason..." required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm me-2">Submit Application</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleForm('applyForm{{ scheme[0] }}')">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No schemes available. Check back later!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'messages' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Messages 💬</h4>
+                <button class="btn btn-primary mb-3" onclick="toggleNewMessage()">✉️ New Message</button>
+                
+                <div id="newMessageForm" style="display:none; margin-bottom:20px; padding:15px; background:#0f172a; border:1px solid #334155; border-radius:8px;">
+                    <h6 style="color:#22d3ee; margin-bottom:15px;">Send New Message</h6>
+                    <form method="POST" action="{{ url_for('student_send_message') }}">
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Search Recipient</label>
+                            <input type="text" id="recipientSearch" class="form-control form-control-sm" placeholder="🔍 Search students or investors..." onkeyup="filterRecipients()">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Select Recipient</label>
+                            <div class="user-list" id="recipientList" style="background:#020617; border:1px solid #334155; border-radius:8px; padding:10px; max-height:300px; overflow-y:auto;">
+                                {% if data.students %}
+                                <div style="color:#22d3ee; font-weight:600; padding:5px 10px;">Students</div>
+                                {% for student in data.students %}
+                                <div class="user-item" data-name="{{ student[1] }}" data-type="student" onclick="selectRecipient({{ student[0] }}, '{{ student[1] }}', 'Student')" style="color:#e5e7eb;">
+                                    <strong style="color:#e5e7eb;">{{ student[1] }}</strong> <span class="badge bg-info">Student</span><br>
+                                    <small style="color:#94a3b8;">{{ student[2] }}</small>
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                                {% if data.investors %}
+                                <div style="color:#22d3ee; font-weight:600; padding:5px 10px; margin-top:10px;">Investors</div>
+                                {% for investor in data.investors %}
+                                <div class="user-item" data-name="{{ investor[1] }}" data-type="investor" onclick="selectRecipient({{ investor[0] }}, '{{ investor[1] }}', 'Investor')" style="color:#e5e7eb;">
+                                    <strong style="color:#e5e7eb;">{{ investor[1] }}</strong> <span class="badge bg-success">Investor</span><br>
+                                    <small style="color:#94a3b8;">{{ investor[2] }}</small>
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Selected: <span id="selectedRecipient" style="color:#22d3ee;">None</span></label>
+                            <input type="hidden" name="receiver_id" id="receiverId" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Your Message</label>
+                            <input type="text" class="form-control form-control-sm" name="message" placeholder="Type your message..." required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm me-2">Send Message</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleNewMessage()">Cancel</button>
+                    </form>
+                </div>
+                
+                {% if data.messages %}
+                {% for msg in data.messages %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <strong style="color: #22d3ee;">{{ msg[4] }}</strong>
+                        <p style="color: #e5e7eb;">{{ msg[3] }}</p>
+                        <small style="color: #94a3b8;">{{ msg[5] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #94a3b8;">No messages yet. Start a conversation!</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chatbot -->
+<button class="chatbot-button" onclick="toggleChatbot()">🤖</button>
+<div class="chatbot-window" id="chatbotWindow">
+    <div class="chatbot-header">
+        <span>AI Assistant</span>
+        <button class="chatbot-close" onclick="toggleChatbot()">×</button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages">
+        <div class="chatbot-message bot">Hi! I'm your startup assistant. Ask me anything about startups, mentors, investors, or schemes!</div>
+    </div>
+    <div class="chatbot-input-area">
+        <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="chatbot-send" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleChatbot() {
+    document.getElementById('chatbotWindow').classList.toggle('active');
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatbotInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const messagesDiv = document.getElementById('chatbotMessages');
+    messagesDiv.innerHTML += `<div class="chatbot-message user">${message}</div>`;
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    fetch('/chatbot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: message})
+    })
+    .then(res => res.json())
+    .then(data => {
+        messagesDiv.innerHTML += `<div class="chatbot-message bot">${data.response}</div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+}
+
+function filterSchemes() {
+    const searchValue = document.getElementById('schemeSearch').value.toLowerCase();
+    const schemes = document.querySelectorAll('.scheme-item');
+    schemes.forEach(scheme => {
+        const text = scheme.textContent.toLowerCase();
+        scheme.style.display = text.includes(searchValue) ? 'block' : 'none';
+    });
+}
+
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function submitSchemeApplication(event, schemeId) {
+    event.preventDefault();
+    alert('Application submitted successfully! You will be contacted soon.');
+    document.getElementById('applyForm' + schemeId).style.display = 'none';
+    event.target.reset();
+}
+
+function toggleNewMessage() {
+    const form = document.getElementById('newMessageForm');
+    form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+}
+
+function assignStartup(startupName, studentName) {
+    fetch('/mentor/assign_startup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({startup_name: startupName, student_name: studentName})
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if(data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Error assigning startup. Please try again.');
+        console.error('Error:', error);
+    });
+}
+
+function submitFeedback(event, menteeName) {
+    event.preventDefault();
+    alert(`Feedback sent to ${menteeName} successfully!`);
+    event.target.reset();
+}
+
+function selectRecipient(id, name, type) {
+    document.getElementById('receiverId').value = id;
+    document.getElementById('selectedRecipient').textContent = name + ' (' + type + ')';
+    document.querySelectorAll('.user-item').forEach(item => {
+        item.style.background = '';
+    });
+    event.target.closest('.user-item').style.background = 'rgba(34,211,238,0.2)';
+}
+
+function filterRecipients() {
+    const searchValue = document.getElementById('recipientSearch').value.toLowerCase();
+    const users = document.querySelectorAll('.user-item');
+    
+    users.forEach(user => {
+        const text = user.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            user.style.display = 'block';
+        } else {
+            user.style.display = 'none';
+        }
+    });
+}
+
+function filterStudents() {
+    const searchValue = document.getElementById('studentSearch').value.toLowerCase();
+    const students = document.querySelectorAll('.student-item');
+    
+    students.forEach(student => {
+        const text = student.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            student.style.display = 'block';
+        } else {
+            student.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,673 @@
+{% extends "base.html" %}
+
+{% block title %}Investor Dashboard - StartupConnect TN{% endblock %}
+
+{% block content %}
+<style>
+.dashboard-container { display: flex; min-height: 100vh; padding-top: 0; }
+.sidebar { 
+    width: 250px; 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white; 
+    padding: 20px 0; 
+    position: fixed; 
+    height: 100vh;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    top: 0;
+    overflow-y: auto;
+}
+.sidebar a { 
+    color: #e5e7eb; 
+    text-decoration: none; 
+    padding: 15px 25px; 
+    display: block; 
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+.sidebar a:hover { 
+    background: rgba(34,211,238,0.15);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    padding-left: 30px;
+}
+.sidebar a.active { 
+    background: rgba(34,211,238,0.2);
+    border-left: 4px solid #22d3ee;
+    color: #22d3ee;
+    font-weight: 600;
+}
+.main-content { 
+    margin-left: 250px; 
+    flex: 1; 
+    padding: 30px; 
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    min-height: 100vh;
+}
+.card { 
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    margin-bottom: 20px;
+}
+.stat-card { 
+    text-align: center; 
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(14,165,233,0.1));
+    border: 1px solid rgba(34,211,238,0.3);
+}
+.stat-card h3 { font-size: 2.5rem; color: #22d3ee; font-weight: 700; }
+.stat-card p { color: #e5e7eb; font-weight: 500; }
+.btn-primary { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; font-weight: 600; }
+h2, h4, h5 { color: #e5e7eb; }
+.table { color: #e5e7eb; }
+.form-control { background: #020617 !important; border: 1px solid #1e293b !important; color: #e5e7eb !important; }
+.user-list { max-height: 300px; overflow-y: auto; }
+.user-item { padding: 10px; border-bottom: 1px solid #334155; cursor: pointer; transition: background 0.2s; }
+.user-item:hover { background: rgba(34,211,238,0.1); }
+
+/* Chatbot Styles */
+.chatbot-button { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; box-shadow: 0 4px 15px rgba(34,211,238,0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.3s; }
+.chatbot-button:hover { transform: scale(1.1); }
+.chatbot-window { position: fixed; bottom: 90px; left: 20px; width: 350px; height: 500px; background: #1e293b; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; z-index: 1000; border: 1px solid #334155; }
+.chatbot-window.active { display: flex; }
+.chatbot-header { background: linear-gradient(135deg, #22d3ee, #0ea5e9); padding: 15px; border-radius: 15px 15px 0 0; color: #020617; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.chatbot-close { background: none; border: none; color: #020617; font-size: 24px; cursor: pointer; }
+.chatbot-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.chatbot-message { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+.chatbot-message.user { background: #22d3ee; color: #020617; align-self: flex-end; }
+.chatbot-message.bot { background: #334155; color: #e5e7eb; align-self: flex-start; }
+.chatbot-input-area { padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; }
+.chatbot-input { flex: 1; background: #0f172a; border: 1px solid #334155; color: #e5e7eb; padding: 10px; border-radius: 8px; }
+.chatbot-send { background: linear-gradient(135deg, #22d3ee, #0ea5e9); border: none; color: #020617; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+</style>
+
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h4 class="text-center mb-4" style="color: #22d3ee;">💼 Investor Panel</h4>
+        <a href="{{ url_for('investor_dashboard', section='overview') }}" class="{% if section == 'overview' %}active{% endif %}">📊 Overview</a>
+        <a href="{{ url_for('investor_dashboard', section='startups') }}" class="{% if section == 'startups' %}active{% endif %}">🚀 Browse Startups</a>
+        <a href="{{ url_for('investor_dashboard', section='shortlisted') }}" class="{% if section == 'shortlisted' %}active{% endif %}">⭐ Shortlisted</a>
+        <a href="{{ url_for('investor_dashboard', section='revenue') }}" class="{% if section == 'revenue' %}active{% endif %}">📊 Revenue Graph</a>
+        <a href="{{ url_for('investor_dashboard', section='risk') }}" class="{% if section == 'risk' %}active{% endif %}">⚠️ Risk Score</a>
+        <a href="{{ url_for('investor_dashboard', section='growth') }}" class="{% if section == 'growth' %}active{% endif %}">📈 Growth Tracker</a>
+        <a href="{{ url_for('investor_dashboard', section='analytics') }}" class="{% if section == 'analytics' %}active{% endif %}">📈 Analytics</a>
+        <a href="{{ url_for('investor_dashboard', section='messages') }}" class="{% if section == 'messages' %}active{% endif %}">💬 Messages</a>
+        <hr style="border-color: rgba(255,255,255,0.2);">
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 class="mb-4">Welcome, {{ name }}! 💼</h2>
+
+        {% if section == 'overview' %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.total_startups if data.total_startups is defined else 0 }}</h3>
+                    <p>Total Startups</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.shortlisted if data.shortlisted is defined else 0 }}</h3>
+                    <p>Shortlisted</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <h3>{{ data.investments if data.investments is defined else 0 }}</h3>
+                    <p>Investments</p>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h5>Quick Actions</h5>
+                <a href="{{ url_for('investor_dashboard', section='startups') }}" class="btn btn-primary me-2">Browse Startups</a>
+                <a href="{{ url_for('investor_dashboard', section='shortlisted') }}" class="btn btn-success me-2">View Shortlisted</a>
+                <a href="{{ url_for('investor_dashboard', section='analytics') }}" class="btn btn-info">View Analytics</a>
+            </div>
+        </div>
+
+        {% elif section == 'startups' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Browse Startups 🚀</h4>
+                <div class="mb-3">
+                    <input type="text" id="startupSearch" class="form-control" placeholder="Search startups by name, domain, stage, or founder..." onkeyup="filterStartups()">
+                </div>
+                {% if data.startups %}
+                <div class="row" id="startupsList">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3 startup-item">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[2] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Founder:</strong> {{ startup[13] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Domain:</strong> <span class="badge bg-info">{{ startup[4] }}</span></p>
+                                <p style="color: #e5e7eb;"><strong>Stage:</strong> {{ startup[5] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Readiness Score:</strong> <span class="badge bg-success">{{ startup[11] }}/100</span></p>
+                                <p style="color: #94a3b8;">{{ startup[3][:100] }}...</p>
+                                <a href="{{ url_for('shortlist_startup', startup_id=startup[0]) }}" class="btn btn-sm btn-primary">Shortlist</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No startups available at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'shortlisted' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Shortlisted Startups ⭐</h4>
+                {% if data.startups %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Startup Name</th>
+                                <th>Founder</th>
+                                <th>Domain</th>
+                                <th>Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for startup in data.startups %}
+                            <tr>
+                                <td>{{ startup[2] }}</td>
+                                <td>{{ startup[13] }}</td>
+                                <td><span class="badge bg-info">{{ startup[4] }}</span></td>
+                                <td><span class="badge bg-success">{{ startup[11] }}/100</span></td>
+                                <td><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#contactModal{{ startup[1] }}">Contact</button></td>
+                            </tr>
+                            
+                            <!-- Contact Modal -->
+                            <div class="modal fade" id="contactModal{{ startup[1] }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content" style="background: #0f172a; color: #e5e7eb;">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Contact {{ startup[13] }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('student_send_message') }}">
+                                            <div class="modal-body">
+                                                <input type="hidden" name="receiver_id" value="{{ startup[1] }}">
+                                                <textarea class="form-control" name="message" rows="4" placeholder="Your message..." required></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-primary">Send Message</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No shortlisted startups yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'revenue' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Revenue Graph 📊</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Track revenue models and financial projections of your shortlisted startups.</p>
+                {% if data.startups %}
+                <div class="row">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[0] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Founder:</strong> {{ startup[3] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Revenue Model:</strong> <span class="badge bg-success">{{ startup[1] if startup[1] else 'Not Specified' }}</span></p>
+                                <p style="color: #e5e7eb;"><strong>Readiness Score:</strong> <span class="badge bg-info">{{ startup[2] }}/100</span></p>
+                                <div class="progress" style="height: 20px; background: #1e293b; margin-top: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ startup[2] }}%;">{{ startup[2] }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No shortlisted startups yet. Shortlist startups to track their revenue models.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'risk' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Risk Score ⚠️</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Assess investment risks based on startup maturity, validation, and financial metrics.</p>
+                {% if data.risk_data %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Startup</th>
+                                <th>Founder</th>
+                                <th>Stage</th>
+                                <th>Validation</th>
+                                <th>Prototype</th>
+                                <th>Revenue</th>
+                                <th>Burn Rate</th>
+                                <th>Growth</th>
+                                <th>Risk Level</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for startup in data.risk_data %}
+                            <tr>
+                                <td>{{ startup.name }}</td>
+                                <td>{{ startup.founder }}</td>
+                                <td><span class="badge bg-info">{{ startup.stage }}</span></td>
+                                <td><span class="badge {% if startup.validation == 'yes' %}bg-success{% else %}bg-warning{% endif %}">{{ startup.validation }}</span></td>
+                                <td><span class="badge {% if startup.prototype == 'completed' %}bg-success{% elif startup.prototype == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">{{ startup.prototype }}</span></td>
+                                <td>₹{{ "{:,.0f}".format(startup.revenue) }}</td>
+                                <td>₹{{ "{:,.0f}".format(startup.burn_rate) }}</td>
+                                <td>{{ startup.growth }}%</td>
+                                <td>
+                                    {% if startup.risk_level == 'Low' %}
+                                    <span class="badge bg-success">Low Risk</span>
+                                    {% elif startup.risk_level == 'Medium' %}
+                                    <span class="badge bg-warning">Medium Risk</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">High Risk</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-primary">{{ startup.risk_score }}/100</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No shortlisted startups yet. Shortlist startups to assess their risk levels.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'growth' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Growth Tracker 📈</h4>
+                <p style="color: #94a3b8; margin-bottom: 20px;">Monitor growth metrics and team expansion of your portfolio startups.</p>
+                {% if data.startups %}
+                <div class="row">
+                    {% for startup in data.startups %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee;">{{ startup[0] }}</h5>
+                                <p style="color: #e5e7eb;"><strong>Founder:</strong> {{ startup[5] }}</p>
+                                <p style="color: #e5e7eb;"><strong>Current Stage:</strong> <span class="badge bg-info">{{ startup[1] }}</span></p>
+                                <p style="color: #e5e7eb;"><strong>Team Size:</strong> <span class="badge bg-warning">{{ startup[2] }} members</span></p>
+                                <p style="color: #e5e7eb;"><strong>Readiness Score:</strong></p>
+                                <div class="progress" style="height: 25px; background: #1e293b;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ startup[3] }}%; background: linear-gradient(135deg, #22d3ee, #0ea5e9);">{{ startup[3] }}%</div>
+                                </div>
+                                <small style="color: #94a3b8; margin-top: 10px; display: block;">Registered: {{ startup[4] }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #94a3b8;">No shortlisted startups yet. Shortlist startups to track their growth.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif section == 'analytics' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Analytics Dashboard 📈</h4>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card" style="background: rgba(30, 41, 59, 0.9);">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee; margin-bottom: 20px;">Startups by Domain</h5>
+                                <canvas id="domainChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card" style="background: rgba(30, 41, 59, 0.9);">
+                            <div class="card-body">
+                                <h5 style="color: #22d3ee; margin-bottom: 20px;">Startups by Stage</h5>
+                                <canvas id="stageChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="background: rgba(30, 41, 59, 0.9);">
+                    <div class="card-body">
+                        <h5 style="color: #22d3ee; margin-bottom: 20px;">Top Shortlisted Startups by Readiness Score</h5>
+                        {% if data.top_startups %}
+                        <canvas id="readinessChart" style="max-height: 400px;"></canvas>
+                        {% else %}
+                        <p style="color: #94a3b8;">No shortlisted startups yet. Shortlist startups to see analytics.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+        // Domain Chart
+        {% if data.domain_stats %}
+        const domainCtx = document.getElementById('domainChart').getContext('2d');
+        new Chart(domainCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for stat in data.domain_stats %}'{{ stat[0] }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for stat in data.domain_stats %}{{ stat[1] }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#22d3ee', '#0ea5e9', '#06b6d4', '#0891b2', '#0e7490', '#164e63'],
+                    borderWidth: 2,
+                    borderColor: '#0f172a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { 
+                        position: 'bottom',
+                        labels: { 
+                            color: '#e5e7eb',
+                            padding: 15,
+                            font: { size: 12 }
+                        } 
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#22d3ee',
+                        bodyColor: '#e5e7eb',
+                        borderColor: '#22d3ee',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Stage Chart
+        {% if data.stage_stats %}
+        const stageCtx = document.getElementById('stageChart').getContext('2d');
+        new Chart(stageCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for stat in data.stage_stats %}'{{ stat[0] }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Number of Startups',
+                    data: [{% for stat in data.stage_stats %}{{ stat[1] }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: 'rgba(34, 211, 238, 0.8)',
+                    borderColor: '#22d3ee',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { 
+                            color: '#e5e7eb',
+                            stepSize: 1
+                        }, 
+                        grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                    },
+                    x: { 
+                        ticks: { color: '#e5e7eb' }, 
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { 
+                        labels: { color: '#e5e7eb' }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#22d3ee',
+                        bodyColor: '#e5e7eb',
+                        borderColor: '#22d3ee',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        // Readiness Score Chart
+        {% if data.top_startups %}
+        const readinessCtx = document.getElementById('readinessChart').getContext('2d');
+        new Chart(readinessCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for startup in data.top_startups %}'{{ startup[0][:20] }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Readiness Score',
+                    data: [{% for startup in data.top_startups %}{{ startup[1] }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: 'rgba(14, 165, 233, 0.8)',
+                    borderColor: '#0ea5e9',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { 
+                            color: '#e5e7eb',
+                            callback: function(value) {
+                                return value + '/100';
+                            }
+                        }, 
+                        grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                    },
+                    y: { 
+                        ticks: { color: '#e5e7eb' }, 
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { 
+                        labels: { color: '#e5e7eb' }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#22d3ee',
+                        bodyColor: '#e5e7eb',
+                        borderColor: '#22d3ee',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Score: ' + context.parsed.x + '/100';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        </script>
+
+        {% elif section == 'messages' %}
+        <div class="card">
+            <div class="card-body">
+                <h4>Messages 💬</h4>
+                <button class="btn btn-primary mb-3" onclick="toggleNewMessage()">✉️ New Message</button>
+                
+                <div id="newMessageForm" style="display:none; margin-bottom:20px; padding:15px; background:#0f172a; border:1px solid #334155; border-radius:8px;">
+                    <h6 style="color:#22d3ee; margin-bottom:15px;">Send New Message</h6>
+                    <form method="POST" action="{{ url_for('student_send_message') }}">
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Search Recipient</label>
+                            <input type="text" id="recipientSearch" class="form-control form-control-sm" placeholder="🔍 Search students or mentors..." onkeyup="filterRecipients()">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Select Recipient</label>
+                            <div class="user-list" id="recipientList" style="background:#020617; border:1px solid #334155; border-radius:8px; padding:10px; max-height:300px; overflow-y:auto;">
+                                {% if data.students %}
+                                <div style="color:#22d3ee; font-weight:600; padding:5px 10px;">Students</div>
+                                {% for student in data.students %}
+                                <div class="user-item" data-name="{{ student[1] }}" data-type="student" onclick="selectRecipient({{ student[0] }}, '{{ student[1] }}', 'Student')" style="color:#e5e7eb;">
+                                    <strong style="color:#e5e7eb;">{{ student[1] }}</strong> <span class="badge bg-info">Student</span><br>
+                                    <small style="color:#94a3b8;">{{ student[2] }}</small>
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                                {% if data.mentors %}
+                                <div style="color:#22d3ee; font-weight:600; padding:5px 10px; margin-top:10px;">Mentors</div>
+                                {% for mentor in data.mentors %}
+                                <div class="user-item" data-name="{{ mentor[1] }}" data-type="mentor" onclick="selectRecipient({{ mentor[0] }}, '{{ mentor[1] }}', 'Mentor')" style="color:#e5e7eb;">
+                                    <strong style="color:#e5e7eb;">{{ mentor[1] }}</strong> <span class="badge bg-warning">Mentor</span><br>
+                                    <small style="color:#94a3b8;">{{ mentor[2] }}</small>
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Selected: <span id="selectedRecipient" style="color:#22d3ee;">None</span></label>
+                            <input type="hidden" name="receiver_id" id="receiverId" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" style="font-size:14px; color:#e5e7eb;">Your Message</label>
+                            <input type="text" class="form-control form-control-sm" name="message" placeholder="Type your message..." required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm me-2">Send Message</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleNewMessage()">Cancel</button>
+                    </form>
+                </div>
+                
+                {% if data.messages %}
+                {% for msg in data.messages %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <strong style="color: #22d3ee;">{{ msg[4] }}</strong>
+                        <p style="color: #e5e7eb;">{{ msg[3] }}</p>
+                        <small style="color: #94a3b8;">{{ msg[5] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p style="color: #94a3b8;">No messages yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chatbot -->
+<button class="chatbot-button" onclick="toggleChatbot()">🤖</button>
+<div class="chatbot-window" id="chatbotWindow">
+    <div class="chatbot-header">
+        <span>AI Assistant</span>
+        <button class="chatbot-close" onclick="toggleChatbot()">×</button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages">
+        <div class="chatbot-message bot">Hi! I'm your startup assistant. Ask me anything about startups, mentors, investors, or schemes!</div>
+    </div>
+    <div class="chatbot-input-area">
+        <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="chatbot-send" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleChatbot() {
+    document.getElementById('chatbotWindow').classList.toggle('active');
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatbotInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const messagesDiv = document.getElementById('chatbotMessages');
+    messagesDiv.innerHTML += `<div class="chatbot-message user">${message}</div>`;
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    fetch('/chatbot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: message})
+    })
+    .then(res => res.json())
+    .then(data => {
+        messagesDiv.innerHTML += `<div class="chatbot-message bot">${data.response}</div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+}
+
+function toggleNewMessage() {
+    const form = document.getElementById('newMessageForm');
+    form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+}
+
+function selectRecipient(id, name, type) {
+    document.getElementById('receiverId').value = id;
+    document.getElementById('selectedRecipient').textContent = name + ' (' + type + ')';
+    document.querySelectorAll('.user-item').forEach(item => {
+        item.style.background = '';
+    });
+    event.target.closest('.user-item').style.background = 'rgba(34,211,238,0.2)';
+}
+
+function filterRecipients() {
+    const searchValue = document.getElementById('recipientSearch').value.toLowerCase();
+    const users = document.querySelectorAll('.user-item');
+    
+    users.forEach(user => {
+        const text = user.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            user.style.display = 'block';
+        } else {
+            user.style.display = 'none';
+        }
+    });
+}
+
+function filterStartups() {
+    const searchValue = document.getElementById('startupSearch').value.toLowerCase();
+    const startups = document.querySelectorAll('.startup-item');
+    
+    startups.forEach(startup => {
+        const text = startup.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            startup.style.display = 'block';
+        } else {
+            startup.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

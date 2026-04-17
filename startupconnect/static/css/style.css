@@ -1,0 +1,188 @@
+/* ================= GLOBAL ================= */
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    color: #e5e7eb;
+    min-height: 100vh;
+}
+
+.page-wrapper {
+    padding-top: 120px;
+}
+
+/* ================= NAVBAR ================= */
+
+.navbar {
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(10px);
+}
+
+/* ================= BUTTONS ================= */
+
+.btn-glow {
+    background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+    color: #020617;
+    border-radius: 30px;
+    padding: 10px 22px;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 0 20px rgba(34,211,238,0.5);
+    transition: transform 0.2s ease;
+}
+
+.btn-glow:hover {
+    transform: scale(1.05);
+}
+
+/* ================= FORMS (LOGIN / REGISTER) ================= */
+
+.card-dark {
+    background: rgba(15, 23, 42, 0.85);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+input, select {
+    background: #020617 !important;
+    border: 1px solid #1e293b !important;
+    color: #e5e7eb !important;
+}
+
+textarea {
+    background: #020617 !important;
+    border: 1px solid #1e293b !important;
+    color: #e5e7eb !important;
+    cursor: text !important;
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+/* ================= HERO SECTION ================= */
+
+.hero-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    display: flex;
+    align-items: center;
+    padding: 120px 0;
+}
+/* ===== HERO LOGO VISIBILITY ===== */
+.hero-section img {
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.35));
+}
+
+/* ================= ALL SECTIONS ================= */
+
+.role-section {
+    padding: 80px 0;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+}
+
+/* ================= CARDS ================= */
+
+.role-card {
+    background: rgba(15, 23, 42, 0.85);
+    padding: 25px;
+    border-radius: 16px;
+    height: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    transition: transform 0.3s ease;
+}
+
+.role-card:hover {
+    transform: translateY(-6px);
+}
+
+/* Card heading colors */
+.student-card h5 {
+    color: #0d6efd;   /* Blue */
+}
+
+.mentor-card h5 {
+    color: #f59e0b;   /* Amber */
+}
+
+.investor-card h5 {
+    color: #198754;   /* Green */
+}
+
+/* Card description text */
+.role-card p {
+    color: #cbd5f5;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* ================= HOW IT WORKS ================= */
+
+.step-card {
+    background: rgba(15, 23, 42, 0.9);
+    padding: 20px;
+    text-align: center;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.step-card h6 {
+    font-weight: 600;
+    color: #e5e7eb;
+    margin-bottom: 8px;
+}
+
+.step-card p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin: 0;
+}
+/* ================= FOOTER ================= */
+
+footer {
+    background: rgba(3, 24, 44, 0.9);
+    color: #94a3b8;
+}
+/* ===== STARTUP CONNECT SMALL CARDS (UNIFIED BLUE) ===== */
+
+.startup-mini-cards .mini-card {
+  background: linear-gradient(135deg, #0d6efd, #0dcaf0); /* SAME BLUE FOR ALL */
+  border-radius: 14px;
+  padding: 18px;
+  height: 100%;
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(13,110,253,0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.startup-mini-cards .mini-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(13,110,253,0.45);
+}
+
+.startup-mini-cards h6 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: #ffffff; /* SAME FOR ALL */
+}
+
+.startup-mini-cards p {
+  font-size: 13px;
+  margin-top: 6px;
+  color: #e0f2fe; /* readable light blue */
+}
+
+.mini-icon {
+  font-size: 26px;
+}
+
+/* ===== FOOTER TEXT FIX ===== */
+footer,
+footer p,
+footer span {
+    color: #ffffff !important;
+}

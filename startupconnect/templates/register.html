@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center">
+  <div class="card-dark col-md-6">
+    <h3 class="text-center mb-4 text-info">Create Account</h3>
+
+    <form method="POST">
+      <input class="form-control mb-3" name="name" placeholder="Full Name" required>
+      <input class="form-control mb-3" name="email" placeholder="Email" required>
+
+      <select class="form-control mb-3" name="role" required>
+        <option value="">Select Role</option>
+        <option value="student">Student</option>
+        <option value="mentor">Mentor</option>
+        <option value="investor">Investor</option>
+      </select>
+
+      <input type="password" class="form-control mb-3" name="password" placeholder="Password" required>
+
+      <button type="submit" class="btn btn-glow w-100">Register</button>
+    </form>
+
+    <p class="text-center mt-3">
+      Already registered? <a href="{{ url_for('login') }}" class="text-info">Login</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
